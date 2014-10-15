@@ -2,94 +2,104 @@ var request = require('request');
 var Stats = require('fast-stats').Stats;
 var fs = require('fs');
 
-function GBPEUR() {
+function getstddiv(cur1, cur2) {
+var cur1 = cur1;
+var cur2 = cur2;
 request.get({
-    url: 'https://api-fxpractice.oanda.com/v1/candles?instrument=GBP_USD&count=720&candleFormat=bidask&granularity=H1&dailyAlignment=0&alignmentTimezone=America%2FNew_York',
+    url: 'https://api-fxpractice.oanda.com/v1/candles?instrument='+cur1+'&count=168&candleFormat=bidask&granularity=H1&dailyAlignment=0&alignmentTimezone=America%2FNew_York',
     'auth': {
         'bearer': '288b00b15a621d41699d496e287d1982-898404c2a1ffe97c68ef6d97e95eeb0f'
     },
     json: true
 }, function(err, res, gu) {
     request.get({
-        url: 'https://api-fxpractice.oanda.com/v1/candles?instrument=EUR_USD&count=720&candleFormat=bidask&granularity=H1&dailyAlignment=0&alignmentTimezone=America%2FNew_York',
+        url: 'https://api-fxpractice.oanda.com/v1/candles?instrument='+cur2+'&count=168&candleFormat=bidask&granularity=H1&dailyAlignment=0&alignmentTimezone=America%2FNew_York',
         'auth': {
             'bearer': '288b00b15a621d41699d496e287d1982-898404c2a1ffe97c68ef6d97e95eeb0f'
         },
         json: true
     }, function(err, res, eu) {
-        var GBPCloseAsk = [];
+        var Cur1CloseAsk = [];
         for (var i in gu.candles) {
-            GBPCloseAsk.push(gu.candles[i].closeAsk);
+            Cur1CloseAsk.push(gu.candles[i].closeAsk);
         }
-        var EURCloseBid = [];
+        var Cur2CloseBid = [];
         for (var j in eu.candles) {
-            EURCloseBid.push(eu.candles[j].closeBid);
+            Cur2CloseBid.push(eu.candles[j].closeBid);
         }
-        var GBPAskEURBidDiff = new Stats();
+        var Cur1AskCur2BidDiff = new Stats();
         for (var k in gu.candles) {
-            GBPAskEURBidDiff.push(GBPCloseAsk[k] - EURCloseBid[
+            Cur1AskCur2BidDiff.push(Cur1CloseAsk[k] - Cur2CloseBid[
                 k]);
         }
-        var GBPAskEURBidMean = GBPAskEURBidDiff.amean();
-        var GBPAskEURBidStdDiv = GBPAskEURBidDiff.stddev();
-        var GBPCloseBid = [];
+        var Cur1AskCur2BidMean = Cur1AskCur2BidDiff.amean();
+        var Cur1AskCur2BidStdDiv = Cur1AskCur2BidDiff.stddev();
+        var Cur1CloseBid = [];
         for (var l in gu.candles) {
-            GBPCloseBid.push(gu.candles[l].closeAsk);
+            Cur1CloseBid.push(gu.candles[l].closeAsk);
         }
-        var EURCloseAsk = [];
+        var Cur2CloseAsk = [];
         for (var m in eu.candles) {
-            EURCloseBid.push(eu.candles[m].closeBid);
+            Cur2CloseBid.push(eu.candles[m].closeBid);
         }
-        var GBPBidEURAskDiff = new Stats();
+        var Cur1BidCur2AskDiff = new Stats();
         for (var n in gu.candles) {
-            GBPAskEURBidDiff.push(GBPCloseAsk[n] - EURCloseBid[
+            Cur1AskCur2BidDiff.push(Cur1CloseAsk[n] - Cur2CloseBid[
                 n]);
         }
-        var GBPBidEURAskMean = GBPAskEURBidDiff.amean();
-        var GBPBidEURAskStdDiv = GBPAskEURBidDiff.stddev();
+        var Cur1BidCur2AskMean = Cur1AskCur2BidDiff.amean();
+        var Cur1BidCur2AskStdDiv = Cur1AskCur2BidDiff.stddev();
         request.get({
-            url: 'https://api-fxpractice.oanda.com/v1/prices?instruments=GBP_USD%2CEUR_USD',
+            url: 'https://api-fxpractice.oanda.com/v1/prices?instruments='+cur1+'%2C'+cur2,
             'auth': {
                 'bearer': '288b00b15a621d41699d496e287d1982-898404c2a1ffe97c68ef6d97e95eeb0f'
             },
             json: true
         }, function(err, res, current) {
-            var currentGBPAsk = current.prices[0].ask;
-            var currentGBPBid = current.prices[0].bid;
-            var currentEURAsk = current.prices[1].ask;
-            var currentEURBid = current.prices[1].bid;
-            var currentGBPAskEURBidDiff = currentGBPAsk -
-                currentEURBid;
-            var currentGBPAskEURBidStdDiv = (
-                    currentGBPAskEURBidDiff -
-                    GBPAskEURBidMean) /
-                GBPAskEURBidStdDiv;
-            var currentGBPBidEURAskDiff = currentGBPBid -
-                currentEURAsk;
-            var currentGBPBidEURAskStdDiv = (
-                    currentGBPBidEURAskDiff -
-                    GBPBidEURAskMean) /
-                GBPBidEURAskStdDiv;
+            var currentCur1Ask = current.prices[0].ask;
+            var currentCur1Bid = current.prices[0].bid;
+            var currentCur2Ask = current.prices[1].ask;
+            var currentCur2Bid = current.prices[1].bid;
+            var currentCur1AskCur2BidDiff = currentCur1Ask -
+                currentCur2Bid;
+            var currentCur1AskCur2BidStdDiv = (
+                    currentCur1AskCur2BidDiff -
+                    Cur1AskCur2BidMean) /
+                Cur1AskCur2BidStdDiv;
+            var currentCur1BidCur2AskDiff = currentCur1Bid -
+                currentCur2Ask;
+            var currentCur1BidCur2AskStdDiv = (
+                    currentCur1BidCur2AskDiff -
+                    Cur1BidCur2AskMean) /
+                Cur1BidCur2AskStdDiv;
             var logString = (new Date() + "," +
-                currentGBPAsk + "," + currentEURBid +
-                "," + currentGBPAskEURBidDiff + "," +
-                currentGBPAskEURBidStdDiv + "," +
-                currentGBPBid + "," + currentEURAsk +
-                "," + currentGBPBidEURAskDiff + "," +
-                currentGBPBidEURAskStdDiv);
-            processInput(logString)
+                currentCur1Ask + "," + currentCur2Bid +
+                "," + currentCur1AskCur2BidDiff + "," + Cur1AskCur2BidMean + "," +
+                currentCur1AskCur2BidStdDiv + "," +
+                currentCur1Bid + "," + currentCur2Ask +
+                "," + currentCur1BidCur2AskDiff + "," + Cur1BidCur2AskMean + "," +
+                currentCur1BidCur2AskStdDiv);
+            processInput(logString, cur1, cur2)
         })
     });
 });
 }
 
- GBPEUR();
+getstddiv("EUR_USD", "NZD_USD"); // 0.92
+getstddiv("AUD_JPY", "AUD_CHF"); // 0.95
+getstddiv("EUR_JPY", "CHF_JPY"); // 0.94
+getstddiv("AUD_USD", "NZD_USD"); // 0.71
+getstddiv("GBP_JPY", "CAD_JPY"); // 0.98
+getstddiv("EUR_CAD", "EUR_GBP"); // 0.93
 
-function processInput(text) {
-    fs.open('log.txt', 'a', function(e, id) {
+
+
+function processInput(text, cur1, cur2) {
+    var filename = cur1+"_"+cur2+'.csv';
+    fs.open(filename, 'a', function(e, id) {
         fs.write(id, text + "\n", null, 'utf8', function() {
             fs.close(id, function() {
-                console.log('file is updated');
+                console.log(filename+' was updated.');
             });
         });
     });
